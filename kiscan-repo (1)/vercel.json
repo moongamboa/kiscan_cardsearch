@@ -1,7 +1,8 @@
 {
-  "public": true,
-  "cleanUrls": true,
-  "crons": [
-    { "path": "/api/check-price-alerts", "schedule": "0 8 * * *" }
-  ]
-}
+     "public": true,
+     "cleanUrls": true,
+     "outputDirectory": "public",
+     "crons": [
+       { "path": "/api/check-price-alerts", "schedule": "0 8 * * *" }
+     ]
+   }
