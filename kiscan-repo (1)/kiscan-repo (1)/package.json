@@ -1,9 +1,0 @@
-{
-  "name": "kiscan",
-  "version": "0.2.0",
-  "private": true,
-  "description": "Buscador de precios y comunidad para TCG (Magic, Pokémon, One Piece, Dragon Ball).",
-  "engines": {
-    "node": ">=18"
-  }
-}
