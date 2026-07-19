@@ -517,7 +517,7 @@ function logSearch(g,name){
 }
 function searchMock(term){
   const t=term.toLowerCase();
-  let id=ALIASES[t];
+  let id=(ALIASES[t]&&MOCK[ALIASES[t]].game===game)?ALIASES[t]:null;
   if(!id){for(const k in ALIASES){if((t.includes(k)||k.includes(t))&&MOCK[ALIASES[k]].game===game){id=ALIASES[k];break;}}}
   if(!id){ // buscar por código de carta (ej. "BT20-060" o "BT20 060")
     const norm=t.replace(/[\s·]+/g,'').replace(/-/g,'');
@@ -526,7 +526,7 @@ function searchMock(term){
   if(!id){for(const k in MOCK){if(MOCK[k].game===game&&MOCK[k].name.toLowerCase().includes(t)&&t.length>2){id=k;break;}}}
   return id?MOCK[id]:null;
 }
-function fallbackFor(g){for(const k in MOCK){if(MOCK[k].game===g)return MOCK[k];}return MOCK["ss4vegito"];}
+function fallbackFor(g){for(const k in MOCK){if(MOCK[k].game===g)return MOCK[k];}return null;}
 
 /* --- Scryfall (Magic, gratis, sin clave) --- */
 async function searchScryfall(name){
