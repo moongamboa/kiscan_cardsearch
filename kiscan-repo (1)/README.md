@@ -70,7 +70,33 @@ gh repo create kiscan --public --source=. --push
      llamadas/día gratis)
 4. **Deploy**. Cada `git push` a partir de ahora despliega solo.
 
-## 4. Pruébalo
+## 5. Activa las alertas de precio automáticas (opcional)
+
+Busca una carta de Magic o Pokémon → pulsa **"🔔 Avisarme si baja"** → escribe
+tu precio objetivo. Cada día, a las 8:00 UTC, Vercel dispara sola una función
+que compara el precio real contra el tuyo y te avisa por email si bajó.
+
+Pasos para activarlo:
+
+1. **Resend** (envío de emails, gratis, 100/día): crea cuenta en
+   [resend.com](https://resend.com) → **API Keys** → **Create API Key** →
+   cópiala.
+2. **Supabase — service_role key**: en tu proyecto de Supabase ve a
+   **Settings → API Keys** y copia la clave **`service_role`** (la secreta,
+   distinta de la `anon` que usa el navegador). Esta clave puede leer/escribir
+   sin restricciones, así que **solo** va en Vercel, nunca en `public/`.
+3. En Vercel → tu proyecto → **Settings → Environment Variables**, añade:
+   - `SUPABASE_URL` → tu Project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` → la clave que acabas de copiar
+   - `RESEND_API_KEY` → la de Resend
+   - `CRON_SECRET` → invéntate una cadena larga random
+4. **Redeploy** el proyecto (Deployments → ⋯ → Redeploy) para que
+   `vercel.json` registre el cron.
+5. Para probarlo sin esperar a mañana: **Vercel → tu proyecto → Cron Jobs →
+   Run now** (una llamada manual a la URL sin la cabecera de Vercel dará 401,
+   que es la protección funcionando correctamente).
+
+## 6. Pruébalo
 
 - Busca "Sol Ring" con el juego Magic activo → precio real de Cardmarket/TCGplayer.
 - Crea una cuenta (botón "Iniciar sesión" → "Regístrate").
@@ -122,8 +148,9 @@ kiscan/
 
 ## Roadmap (siguiente nivel)
 
-- [ ] Alertas de precio activas: función programada (Supabase Edge Function
-      + `pg_cron`) que compare precios guardados y envíe email con Resend.
+- [x] Alertas de precio activas: cron diario en `/api/check-price-alerts`
+      (Vercel Cron, gratis, 1 vez/día) que compara precios reales contra tu
+      objetivo y envía email con Resend. Ver sección "Alertas de precio" abajo.
 - [ ] Reconocimiento de carta por foto: OCR del código impreso con
       Tesseract.js (gratis, corre en el navegador) en vez del sorteo actual.
 - [x] Conectar One Piece/Dragon Ball a datos reales vía `/api/card-search`

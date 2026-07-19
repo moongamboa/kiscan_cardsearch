@@ -364,7 +364,7 @@
 <script type="module">
 import { supabase, signUp, signIn, signOut, onAuthChange, getSession,
   addToCollection, getMyCollection, removeFromCollection,
-  createPriceAlert, listEvents, createEvent as dbCreateEvent, joinEvent, leaveEvent
+  createPriceAlert, getMyAlerts, listEvents, createEvent as dbCreateEvent, joinEvent, leaveEvent
 } from './supabase-client.js';
 
 // ¿Ya rellenaste las claves en supabase-client.js? Si no, seguimos en modo
@@ -617,6 +617,7 @@ function renderResult(c){
          <h4>Mejor precio ahora ${c.live?'<span class="livebadge">EN VIVO</span>':'<span class="demobadge">DEMO</span>'}</h4>
          <div class="bestprice"><span class="big">${b.price>0?fmt(b.price,b.cur):'—'}</span><span class="at">en <b style="color:var(--txt)">${b.src}</b> ${b.flag}</span>
            <button class="btn-ghost" style="margin-left:auto;font-size:12.5px;padding:7px 12px" onclick='saveCurrentToCollection(${JSON.stringify({name:c.name,code:c.code,price:b.price,cur:b.cur,img:c.imageUrl||""}).replace(/'/g,"&#39;")})'>+ Guardar en mi colección</button>
+           <button class="btn-ghost" style="font-size:12.5px;padding:7px 12px" onclick='createAlertFor(${JSON.stringify({name:c.name,price:b.price}).replace(/'/g,"&#39;")})'>🔔 Avisarme si baja</button>
          </div>
          <table class="prices" style="margin-top:14px"><thead><tr><th>Fuente</th><th>Precio</th><th></th></tr></thead><tbody>${rows}</tbody></table>
          <div style="color:var(--muted-2);font-size:11.5px;margin-top:12px">Los precios de fuentes distintas pueden estar en monedas diferentes (€ Cardmarket / $ TCGplayer). ${c.live?'Datos sincronizados por la fuente cada 24 h.':'Datos de ejemplo.'}</div>
@@ -762,6 +763,19 @@ function refreshAuthUI(session){
   else{btn.textContent='Iniciar sesión';btn.onclick=openAuth;link.style.display='none';document.getElementById('mycollection').style.display='none';}
 }
 
+async function createAlertFor(c){
+  if(!SUPABASE_READY){alert('Configura Supabase para crear alertas (ver README).');return;}
+  if(!(await getSession())){openAuth();return;}
+  const sugerido=c.price?c.price.toFixed(2):'';
+  const target=prompt('Avísame por email cuando "'+c.name+'" baje de (€):',sugerido);
+  if(!target)return;
+  const num=parseFloat(target.replace(',','.'));
+  if(isNaN(num)||num<=0){alert('Escribe un número válido.');return;}
+  const{error}=await createPriceAlert({game,card_name:c.name,target_price:num,currency:'EUR'});
+  if(error){alert('No se pudo crear la alerta: '+error.message);return;}
+  alert('Alerta creada ✓ Te avisaremos por email cuando baje de '+num.toFixed(2)+' €.\n(Se revisa una vez al día.)');
+}
+
 /* ============ COLECCIÓN ============ */
 async function saveCurrentToCollection(c){
   if(!SUPABASE_READY){alert('Configura Supabase para guardar tu colección (ver README).');return;}
@@ -791,7 +805,7 @@ async function removeItem(id){await removeFromCollection(id);renderCollection();
 
 /* exponer al scope global (lo usan los onclick del HTML) */
 Object.assign(window,{setGame,setMode,quick,runSearch,toggleVoice,handlePhoto,join,openModal,closeModal,createEvent,
-  openAuth,closeAuth,toggleAuthMode,submitAuth,saveCurrentToCollection,removeItem});
+  openAuth,closeAuth,toggleAuthMode,submitAuth,saveCurrentToCollection,removeItem,createAlertFor});
 
 /* init */
 renderChips();renderRail();renderEvents();

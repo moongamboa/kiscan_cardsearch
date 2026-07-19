@@ -9,8 +9,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // está diseñada para vivir en el navegador. La seguridad real la da RLS
 // (Row Level Security) en la base de datos, no ocultar esta clave.
 // Rellénalas después de crear tu proyecto en supabase.com.
-const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
-const SUPABASE_ANON_KEY = "TU-ANON-KEY-PUBLICA";
+const SUPABASE_URL = "https://jbrgcmvpubovyhnuhrlz.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpicmdjbXZwdWJvdnlobnVocmx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMjE2MzMsImV4cCI6MjA5OTc5NzYzM30.-u352zbJ9a_2aJawMlOjge6jwvvfLPqQLWgh-48FB7Q";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
