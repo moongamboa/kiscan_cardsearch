@@ -127,3 +127,37 @@ create index if not exists idx_collection_user on public.collection_items(user_i
 create index if not exists idx_alerts_user on public.price_alerts(user_id);
 create index if not exists idx_events_date on public.events(event_date);
 create index if not exists idx_events_country on public.events(country);
+
+-- ============================================================
+-- 5) RANKING DE CARTAS MÁS BUSCADAS
+-- ============================================================
+create table if not exists public.search_stats (
+  game text not null,
+  card_name text not null,
+  count integer not null default 0,
+  last_searched_at timestamptz default now(),
+  primary key (game, card_name)
+);
+
+alter table public.search_stats enable row level security;
+
+-- Todo el mundo puede LEER el ranking (para mostrarlo en "Tendencias")
+drop policy if exists "search_stats_select_all" on public.search_stats;
+create policy "search_stats_select_all" on public.search_stats for select using (true);
+-- Nadie escribe directo desde el navegador: solo la función de servidor
+-- /api/log-search (que usa la service_role key) puede sumar búsquedas.
+-- Así nadie puede "hacer trampa" inflando el contador desde la consola del navegador.
+
+create index if not exists idx_search_stats_count on public.search_stats(game, count desc);
+
+-- Función que suma 1 búsqueda de forma atómica (evita condiciones de carrera
+-- si dos personas buscan la misma carta al mismo tiempo).
+create or replace function public.increment_search(p_game text, p_card_name text)
+returns void as $$
+begin
+  insert into public.search_stats (game, card_name, count, last_searched_at)
+  values (p_game, p_card_name, 1, now())
+  on conflict (game, card_name)
+  do update set count = public.search_stats.count + 1, last_searched_at = now();
+end;
+$$ language plpgsql security definer;

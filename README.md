@@ -70,6 +70,14 @@ gh repo create kiscan --public --source=. --push
      llamadas/día gratis)
 4. **Deploy**. Cada `git push` a partir de ahora despliega solo.
 
+## 4. Ranking real de "más buscadas" (automático, sin pasos extra)
+
+En cuanto Supabase esté conectado (paso 2 de arriba), cada búsqueda con éxito
+suma 1 en la tabla `search_stats` a través de `/api/log-search`. La sección
+"Ranking en vivo" del home lee ese contador real; si aún no hay búsquedas
+registradas, muestra un listado de ejemplo para que la sección nunca se vea
+vacía. No hay que configurar nada aparte de lo del paso 2.
+
 ## 5. Activa las alertas de precio automáticas (opcional)
 
 Busca una carta de Magic o Pokémon → pulsa **"🔔 Avisarme si baja"** → escribe

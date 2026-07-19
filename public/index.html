@@ -293,7 +293,7 @@
 
 <section id="trends">
   <div class="wrap">
-    <div class="sec-head"><div><div class="eyebrow">Tendencias</div><h2>Más buscadas esta semana</h2><p>Lo que la comunidad busca ahora mismo. Toca una carta para ver el comparador de precios.</p></div></div>
+    <div class="sec-head"><div><div class="eyebrow">Ranking en vivo</div><h2>Más buscadas esta semana</h2><p>Ranking real de lo que la comunidad busca en KiScan. Toca una carta para ver el comparador de precios.</p></div></div>
     <div class="rail" id="rail"></div>
   </div>
 </section>
@@ -364,7 +364,8 @@
 <script type="module">
 import { supabase, signUp, signIn, signOut, onAuthChange, getSession,
   addToCollection, getMyCollection, removeFromCollection,
-  createPriceAlert, getMyAlerts, listEvents, createEvent as dbCreateEvent, joinEvent, leaveEvent
+  createPriceAlert, getMyAlerts, listEvents, createEvent as dbCreateEvent, joinEvent, leaveEvent,
+  getTopSearched
 } from './supabase-client.js';
 
 // ¿Ya rellenaste las claves en supabase-client.js? Si no, seguimos en modo
@@ -473,7 +474,7 @@ async function runSearch(){
     else card=await searchLiveTcg(game,term)||searchMock(term);
     await wait(700);
     stopScan();
-    if(card){renderResult(card);document.getElementById('result').scrollIntoView({behavior:'smooth'});}
+    if(card){renderResult(card);logSearch(game,card.name);document.getElementById('result').scrollIntoView({behavior:'smooth'});}
     else renderEmpty(term);
   }catch(e){
     stopScan();
@@ -484,6 +485,10 @@ async function runSearch(){
   }finally{btn.disabled=false;}
 }
 function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+function logSearch(g,name){
+  // "Fire and forget": no esperamos la respuesta ni rompemos nada si falla.
+  fetch('/api/log-search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({game:g,card_name:name})}).catch(()=>{});
+}
 function searchMock(term){
   const t=term.toLowerCase();
   let id=ALIASES[t];
@@ -670,8 +675,22 @@ const RAIL={
   onepiece:[["Shanks","OP01","≈ 78 €"],["Roronoa Zoro","OP01","≈ 5,40 €"],["Monkey D. Luffy","OP01","≈ 2,20 €"],["Yamato","OP09","≈ 12 €"]],
   dbs:[["Goku Ultra Instinct","BT20","≈ 45 €"],["Super Saiyan 3 Son Goku","BT05","≈ 16 €"],["SS4 Son Goku","BT12","≈ 12,50 €"],["Goku SSG","BT01","≈ 8,90 €"]]
 };
-function renderRail(){
-  document.getElementById('rail').innerHTML=RAIL[game].map((c,i)=>`
+async function renderRail(){
+  const rail=document.getElementById('rail');
+  if(SUPABASE_READY){
+    const{data,error}=await getTopSearched(game,4);
+    if(!error&&data&&data.length){
+      rail.innerHTML=data.map((c,i)=>`
+        <div class="mini" onclick="quick('${c.card_name.replace(/'/g,"\\'")}')">
+          <div class="rank">#${i+1}</div>
+          <div class="thumb"><div class="a"></div><span>${c.card_name}</span></div>
+          <h5>${c.card_name}</h5><div class="set">${c.count} búsqueda${c.count===1?'':'s'} · ${GAMES[game].label}</div><div class="mp">🔥 Real</div>
+        </div>`).join('');
+      return;
+    }
+  }
+  // Fallback: aún no hay datos reales de búsqueda (o Supabase no está listo) -> demo fijo
+  rail.innerHTML=RAIL[game].map((c,i)=>`
     <div class="mini" onclick="quick('${c[0].replace(/'/g,"\\'")}')">
       <div class="rank">#${i+1}</div>
       <div class="thumb"><div class="a"></div><span>${c[0]}</span></div>

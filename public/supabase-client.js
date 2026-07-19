@@ -80,3 +80,11 @@ export async function leaveEvent(eventId) {
   if (!user) return;
   return supabase.from('event_attendees').delete().eq('event_id', eventId).eq('user_id', user.id);
 }
+
+/* ---------------- RANKING DE CARTAS MÁS BUSCADAS ---------------- */
+// Lectura pública (RLS lo permite a cualquiera). La escritura NO pasa por
+// aquí: la hace /api/log-search con la clave secreta, para que nadie pueda
+// inflar el contador desde la consola del navegador.
+export async function getTopSearched(game, limit = 4) {
+  return supabase.from('search_stats').select('*').eq('game', game).order('count', { ascending: false }).limit(limit);
+}
