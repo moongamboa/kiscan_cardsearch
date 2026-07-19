@@ -15,9 +15,9 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { game, name } = req.query;
-  if (!game || !name) {
-    return res.status(400).json({ error: 'Faltan parámetros: game y name son obligatorios.' });
+  const { game, name, code } = req.query;
+  if (!game || (!name && !code)) {
+    return res.status(400).json({ error: 'Faltan parámetros: game y (name o code) son obligatorios.' });
   }
 
   // Traduce el nombre de juego de la app al slug que espera apitcg.com
@@ -38,7 +38,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `https://apitcg.com/api/${slug}/cards?name=${encodeURIComponent(name)}`;
+    // Si el usuario buscó algo con forma de código (ej. FB01-001), filtramos
+    // por el campo "code" de apitcg.com, que es más preciso que buscar por
+    // nombre. Si no, buscamos por "name" como siempre.
+    const param = code ? `code=${encodeURIComponent(code)}` : `name=${encodeURIComponent(name)}`;
+    const url = `https://apitcg.com/api/${slug}/cards?${param}`;
     const upstream = await fetch(url, {
       headers: { 'x-api-key': apiKey, 'Accept': 'application/json' }
     });

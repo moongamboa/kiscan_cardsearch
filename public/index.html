@@ -378,9 +378,9 @@ const GAMES={
     chips:["Sol Ring","Ragavan, Nimble Pilferer","Lightning Bolt","Counterspell"]},
   pokemon:{label:"Pokémon",live:"pokemon",placeholder:"Ej: Charizard, Pikachu, Mewtwo…",
     chips:["Charizard","Pikachu","Mewtwo","Umbreon"]},
-  onepiece:{label:"One Piece",live:null,placeholder:"Ej: Luffy, Zoro, Shanks…",
+  onepiece:{label:"One Piece",live:null,placeholder:"Ej: Luffy, Zoro, Shanks… o un código (OP01-001)",
     chips:["Monkey D. Luffy","Roronoa Zoro","Shanks"]},
-  dbs:{label:"Dragon Ball",live:null,placeholder:"Ej: Goku Ultra Instinct, SS4 Son Goku, Goku SSGSS…",
+  dbs:{label:"Dragon Ball",live:null,placeholder:"Ej: Goku Ultra Instinct… o un código (FB01-001)",
     chips:["Goku Ultra Instinct","SS4 Son Goku","Goku SSGSS","Super Saiyan 3 Son Goku","Goku SSG"]}
 };
 
@@ -493,6 +493,10 @@ function searchMock(term){
   const t=term.toLowerCase();
   let id=ALIASES[t];
   if(!id){for(const k in ALIASES){if((t.includes(k)||k.includes(t))&&MOCK[ALIASES[k]].game===game){id=ALIASES[k];break;}}}
+  if(!id){ // buscar por código de carta (ej. "BT20-060" o "BT20 060")
+    const norm=t.replace(/[\s·]+/g,'').replace(/-/g,'');
+    for(const k in MOCK){if(MOCK[k].game===game&&MOCK[k].code.toLowerCase().replace(/[\s·]+/g,'').replace(/-/g,'')===norm){id=k;break;}}
+  }
   if(!id){for(const k in MOCK){if(MOCK[k].game===game&&MOCK[k].name.toLowerCase().includes(t)&&t.length>2){id=k;break;}}}
   return id?MOCK[id]:null;
 }
@@ -545,8 +549,11 @@ function pokeText(c){
    buscador cae automáticamente a los datos demo. */
 async function searchLiveTcg(game,term){
   try{
+    // ¿El término escrito tiene forma de código de carta? (ej. FB01-001, BT20-060, OP03-070)
+    const isCode=/^[A-Za-z]{2,4}\d{1,3}-\d{1,4}$/.test(term.trim());
+    const qs=isCode?('code='+encodeURIComponent(term.trim().toUpperCase())):('name='+encodeURIComponent(term));
     // 1) Datos de la carta desde apitcg.com (a través del proxy)
-    const r=await fetch('/api/card-search?game='+game+'&name='+encodeURIComponent(term));
+    const r=await fetch('/api/card-search?game='+game+'&'+qs);
     if(!r.ok)return null;
     const j=await r.json();
     const c=(j.data||j.cards||[])[0];

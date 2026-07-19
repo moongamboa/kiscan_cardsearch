@@ -131,6 +131,21 @@ kiscan/
 └── package.json
 ```
 
+## Fuentes de datos: qué SÍ y qué NO se conecta, y por qué
+
+| Fuente | ¿Se usa? | Motivo |
+|---|---|---|
+| Scryfall (Magic) | ✅ | API pública oficial, gratis |
+| Pokémon TCG API | ✅ | API pública oficial, gratis |
+| apitcg.com (One Piece / Dragon Ball **Fusion World**) | ✅ (con tu clave) | API con tier gratis. **Ojo**: cubre el Dragon Ball Super *Fusion World* actual (códigos `FB0X`), no el Dragon Ball Super Card Game descontinuado (códigos `BT0X`) que usan los datos de ejemplo |
+| eBay Browse API (marketplace España) | ✅ (con tus claves) | API oficial, gratis hasta ~5.000 llamadas/día |
+| **Vinted** | ❌ | No tiene API pública para leer anuncios de terceros (solo una API "Pro" para que negocios gestionen su propio inventario, en lista de espera). La única forma de sacar datos es scraping de endpoints internos, que va contra sus términos de servicio y se rompe sin avisar |
+| **Wallapop** | ❌ | No tiene ninguna API pública. Mismo problema que Vinted |
+
+Se puede buscar tanto por **nombre** ("Son Goku Ultra Instinct") como por
+**código de carta** ("FB01-001", "OP03-070") — la app detecta el formato
+sola y usa el parámetro correcto en `apitcg.com`.
+
 ## Cómo funcionan las piezas (para aprender)
 
 - **¿Por qué las funciones están en `/api` y no llamo a apitcg.com directo
