@@ -232,7 +232,7 @@
   <div class="wrap nav-in">
     <a class="logo" href="#top"><span class="orb"></span>Ki<b>Scan</b></a>
     <nav class="links">
-      <a href="#result">Buscar</a><a href="#trends">Tendencias</a><a href="#events">Eventos</a><a href="#mycollection" id="collectionLink" style="display:none">Mi colección</a><a href="#community">Comunidad</a>
+      <a href="#result">Buscar</a><a href="#trends">Tendencias</a><a href="#events">Eventos</a><a href="#mycollection" id="collectionLink" style="display:none">Mi colección</a><a href="#" id="profileLink" style="display:none" onclick="openProfile();return false;">Mi perfil</a><a href="#community">Comunidad</a>
     </nav>
     <button class="btn-ghost" id="authBtn" style="margin-left:auto" onclick="openAuth()">Iniciar sesión</button>
     <button class="btn-ghost menu-btn" aria-label="Menú" onclick="document.querySelector('.links').style.display='flex'">☰</button>
@@ -251,7 +251,8 @@
         <button class="game-pill active" data-game="magic" onclick="setGame('magic')">🟣 Magic <span class="live">EN VIVO</span></button>
         <button class="game-pill" data-game="pokemon" onclick="setGame('pokemon')">🔴 Pokémon <span class="live">EN VIVO</span></button>
         <button class="game-pill" data-game="onepiece" onclick="setGame('onepiece')">🏴‍☠️ One Piece <span class="demo">DEMO</span></button>
-        <button class="game-pill" data-game="dbs" onclick="setGame('dbs')">🟠 Dragon Ball <span class="demo">DEMO</span></button>
+        <button class="game-pill" data-game="dbfw" onclick="setGame('dbfw')">🟠 Dragon Ball · Fusion World <span class="demo">DEMO</span></button>
+        <button class="game-pill" data-game="dbmaster" onclick="setGame('dbmaster')">🟡 Dragon Ball · Master <span class="demo">DEMO</span></button>
       </div>
 
       <div class="modes">
@@ -344,6 +345,28 @@
   </div>
 </div>
 
+<div class="modal-bg" id="profileBg" onclick="if(event.target===this)closeProfile()">
+  <div class="modal">
+    <h3>Mi perfil</h3>
+    <p class="sub">Tu país nos ayuda a recomendarte eventos y torneos cerca de ti.</p>
+    <div class="field"><label>Nombre de usuario</label><input id="profileUsername" placeholder="tu-nombre"></div>
+    <div class="field"><label>País</label>
+      <select id="profileCountry">
+        <option value="">Sin especificar</option>
+        <option value="ES">🇪🇸 España</option>
+        <option value="FR">🇫🇷 Francia</option>
+        <option value="US">🇺🇸 EE. UU.</option>
+        <option value="MX">🇲🇽 México</option>
+      </select>
+    </div>
+    <div id="profileMsg" style="font-size:13px;color:var(--muted);min-height:18px;margin-bottom:6px"></div>
+    <div class="modal-actions">
+      <button class="btn-red" onclick="saveProfile()">Guardar</button>
+      <button class="btn-ghost" onclick="closeProfile()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <h3>Publicar evento</h3><p class="sub">Reúne a la comunidad de tu zona. Aparecerá al instante en el listado.</p>
@@ -365,7 +388,7 @@
 import { supabase, signUp, signIn, signOut, onAuthChange, getSession,
   addToCollection, getMyCollection, removeFromCollection,
   createPriceAlert, getMyAlerts, listEvents, createEvent as dbCreateEvent, joinEvent, leaveEvent,
-  getTopSearched
+  getTopSearched, getMyProfile, updateMyProfile
 } from './supabase-client.js';
 
 // ¿Ya rellenaste las claves en supabase-client.js? Si no, seguimos en modo
@@ -380,35 +403,37 @@ const GAMES={
     chips:["Charizard","Pikachu","Mewtwo","Umbreon"]},
   onepiece:{label:"One Piece",live:null,placeholder:"Ej: Luffy, Zoro, Shanks… o un código (OP01-001)",
     chips:["Monkey D. Luffy","Roronoa Zoro","Shanks"]},
-  dbs:{label:"Dragon Ball",live:null,placeholder:"Ej: Goku Ultra Instinct… o un código (FB01-001)",
+  dbfw:{label:"Dragon Ball Fusion World",live:null,demoOnly:false,placeholder:"Ej: Goku Ultra Instinct… o un código (FB01-001)",
+    chips:["Son Goku","Vegeta","Freezer"]},
+  dbmaster:{label:"Dragon Ball Master (clásico)",live:null,demoOnly:true,placeholder:"Ej: Goku Ultra Instinct, SS4 Son Goku, Goku SSGSS…",
     chips:["Goku Ultra Instinct","SS4 Son Goku","Goku SSGSS","Super Saiyan 3 Son Goku","Goku SSG"]}
 };
 
 /* ============ MOCK (One Piece + Dragon Ball + fallbacks) ============ */
 const MOCK={
   // Dragon Ball
-  "ss4vegito":{game:"dbs",name:"SS4 Limit Breaker Vegito",code:"BT31 · 001",set:"Dawn of Fusion",rarity:"Super Rare",color:"Rojo",cost:8,power:"35000",cardType:"Vegito · Xenoverse",
+  "ss4vegito":{game:"dbmaster",name:"SS4 Limit Breaker Vegito",code:"BT31 · 001",set:"Dawn of Fusion",rarity:"Super Rare",color:"Rojo",cost:8,power:"35000",cardType:"Vegito · Xenoverse",
     ability:"Cuando este personaje ataca, puedes barajar hasta 3 cartas de tu mano en el deck; roba ese número. <b>Doble golpe</b> (inflige 2 puntos de daño).",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 48 en venta",price:7.00,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 12",price:7.85,cur:"€"},{src:"Kame House",flag:"🇪🇸",loc:"Madrid · 3 en tienda",price:8.50,cur:"€",cls:"low"},{src:"Namek Cards",flag:"🇪🇸",loc:"Barcelona · agotado",price:9.20,cur:"€",cls:"out"}]},
-  "gokuui":{game:"dbs",name:"Son Goku, Instinto Superior",code:"BT20 · 060",set:"Power Absorbed",rarity:"Secret Rare",color:"Azul",cost:7,power:"25000",cardType:"Son Goku · Ultra Instinct",
+  "gokuui":{game:"dbmaster",name:"Son Goku, Instinto Superior",code:"BT20 · 060",set:"Power Absorbed",rarity:"Secret Rare",color:"Azul",cost:7,power:"25000",cardType:"Son Goku · Ultra Instinct",
     ability:"<b>Contraataque</b>: juega esta carta desde tu mano al recibir un ataque. Al entrar, KO a un personaje enemigo con 15000 de poder o menos.",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 21 en venta",price:44.90,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 8",price:49.99,cur:"€",cls:"low"},{src:"Kame House",flag:"🇪🇸",loc:"Madrid · 1",price:55.00,cur:"€",cls:"low"}]},
-  "gokussgss":{game:"dbs",name:"Son Goku SSGSS",code:"BT18 · 030",set:"Dawn of the Z-Legends",rarity:"Super Rare",color:"Azul",cost:6,power:"20000",cardType:"Son Goku · Super Saiyan Blue",
+  "gokussgss":{game:"dbmaster",name:"Son Goku SSGSS",code:"BT18 · 030",set:"Dawn of the Z-Legends",rarity:"Super Rare",color:"Azul",cost:6,power:"20000",cardType:"Son Goku · Super Saiyan Blue",
     ability:"Al entrar en juego, roba 1 carta. <b>Crítico</b> mientras tengas 2 o más cartas azules en tu campo.",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 120 en venta",price:3.50,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 40",price:3.95,cur:"€"},{src:"Namek Cards",flag:"🇪🇸",loc:"Barcelona · 9",price:4.00,cur:"€"}]},
-  "gokuss4":{game:"dbs",name:"SS4 Son Goku",code:"BT12 · 146",set:"Vicious Rejuvenation",rarity:"Super Rare",color:"Rojo",cost:7,power:"30000",cardType:"Son Goku · Xenoverse",
+  "gokuss4":{game:"dbmaster",name:"SS4 Son Goku",code:"BT12 · 146",set:"Vicious Rejuvenation",rarity:"Super Rare",color:"Rojo",cost:7,power:"30000",cardType:"Son Goku · Xenoverse",
     ability:"<b>Doble golpe</b>. Cuando este personaje ataca, cambia hasta 1 carta de energía de tu oponente a modo inactivo.",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 35 en venta",price:12.50,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 10",price:14.20,cur:"€"},{src:"Kame House",flag:"🇪🇸",loc:"Madrid · 4 en tienda",price:13.90,cur:"€",cls:"low"}]},
-  "gokussg":{game:"dbs",name:"Super Saiyan God Son Goku",code:"BT01 · 031",set:"Galactic Battle",rarity:"Super Rare",color:"Rojo",cost:6,power:"19000",cardType:"Son Goku · SSG",
+  "gokussg":{game:"dbmaster",name:"Super Saiyan God Son Goku",code:"BT01 · 031",set:"Galactic Battle",rarity:"Super Rare",color:"Rojo",cost:6,power:"19000",cardType:"Son Goku · SSG",
     ability:"<b>Crítico</b>. Al entrar en juego, tu oponente cambia hasta 1 de sus personajes a modo inactivo.",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 52 en venta",price:8.90,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 18",price:9.80,cur:"€"},{src:"Namek Cards",flag:"🇪🇸",loc:"Barcelona · 6",price:9.50,cur:"€"}]},
-  "gokuss3":{game:"dbs",name:"Super Saiyan 3 Son Goku",code:"BT05 · 042",set:"Miraculous Revival",rarity:"Special Rare",color:"Amarillo",cost:8,power:"25000",cardType:"Son Goku · SS3",
+  "gokuss3":{game:"dbmaster",name:"Super Saiyan 3 Son Goku",code:"BT05 · 042",set:"Miraculous Revival",rarity:"Special Rare",color:"Amarillo",cost:8,power:"25000",cardType:"Son Goku · SS3",
     ability:"<b>Barrera</b>. Cuando ataca, tu oponente no puede jugar cartas de batalla desde su mano hasta el final del turno.",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 22 en venta",price:16.40,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 7",price:18.00,cur:"€",cls:"low"}]},
-  "gokuleader":{game:"dbs",name:"Son Goku, la Batalla Definitiva (Líder)",code:"BT17 · 001",set:"Ultimate Squad",rarity:"Leader",color:"Amarillo",cost:"—",power:"20000",cardType:"Líder · Son Goku",
+  "gokuleader":{game:"dbmaster",name:"Son Goku, la Batalla Definitiva (Líder)",code:"BT17 · 001",set:"Ultimate Squad",rarity:"Leader",color:"Amarillo",cost:"—",power:"20000",cardType:"Líder · Son Goku",
     ability:"<b>Despertar</b>: cuando tu vida sea 4 o menos, gira esta carta. <b>Activar: Main</b> — una vez por turno, dale +5000 de poder a un personaje «Son Goku».",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 40 en venta",price:6.20,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 15",price:7.00,cur:"€"}]},
-  "gogeta":{game:"dbs",name:"Gogeta SS4",code:"BT12 · 152",set:"Vicious Rejuvenation",rarity:"Special Rare",color:"Verde",cost:9,power:"40000",cardType:"Gogeta · Xenoverse",
+  "gogeta":{game:"dbmaster",name:"Gogeta SS4",code:"BT12 · 152",set:"Vicious Rejuvenation",rarity:"Special Rare",color:"Verde",cost:9,power:"40000",cardType:"Gogeta · Xenoverse",
     ability:"<b>Triple golpe</b>. Cuando ataca, tu oponente no puede activar habilidades de contraataque este turno.",
     prices:[{src:"Cardmarket",flag:"🇪🇺",loc:"UE · 14 en venta",price:59.00,cur:"€"},{src:"TCGplayer",flag:"🇺🇸",loc:"EE. UU. · 5",price:64.50,cur:"€",cls:"low"}]},
   // One Piece
@@ -471,6 +496,7 @@ async function runSearch(){
     const src=GAMES[game].live;
     if(src==='scryfall') card=await searchScryfall(term);
     else if(src==='pokemon') card=await searchPokemon(term);
+    else if(GAMES[game].demoOnly) card=searchMock(term);
     else card=await searchLiveTcg(game,term)||searchMock(term);
     await wait(700);
     stopScan();
@@ -680,7 +706,8 @@ const RAIL={
   magic:[["Ragavan, Nimble Pilferer","MH2","≈ 45 €"],["Sol Ring","CMR","≈ 2 €"],["Lightning Bolt","M11","≈ 3 €"],["Counterspell","MMQ","≈ 1 €"]],
   pokemon:[["Charizard","BS · 4","≈ 250 €"],["Pikachu","PROMO","≈ 8 €"],["Umbreon VMAX","EVS","≈ 90 €"],["Mewtwo","BS · 10","≈ 40 €"]],
   onepiece:[["Shanks","OP01","≈ 78 €"],["Roronoa Zoro","OP01","≈ 5,40 €"],["Monkey D. Luffy","OP01","≈ 2,20 €"],["Yamato","OP09","≈ 12 €"]],
-  dbs:[["Goku Ultra Instinct","BT20","≈ 45 €"],["Super Saiyan 3 Son Goku","BT05","≈ 16 €"],["SS4 Son Goku","BT12","≈ 12,50 €"],["Goku SSG","BT01","≈ 8,90 €"]]
+  dbfw:[["Son Goku","FB01","—"],["Vegeta","FB01","—"],["Freezer","FB02","—"],["Trunks","FB03","—"]],
+  dbmaster:[["Goku Ultra Instinct","BT20","≈ 45 €"],["Super Saiyan 3 Son Goku","BT05","≈ 16 €"],["SS4 Son Goku","BT12","≈ 12,50 €"],["Goku SSG","BT01","≈ 8,90 €"]]
 };
 async function renderRail(){
   const rail=document.getElementById('rail');
@@ -784,9 +811,33 @@ async function submitAuth(){
   else{closeAuth();}
 }
 function refreshAuthUI(session){
-  const btn=document.getElementById('authBtn'),link=document.getElementById('collectionLink');
-  if(session){btn.textContent='Cerrar sesión ('+session.user.email.split('@')[0]+')';btn.onclick=async()=>{await signOut();};link.style.display='inline';renderCollection();}
-  else{btn.textContent='Iniciar sesión';btn.onclick=openAuth;link.style.display='none';document.getElementById('mycollection').style.display='none';}
+  const btn=document.getElementById('authBtn'),link=document.getElementById('collectionLink'),plink=document.getElementById('profileLink');
+  if(session){btn.textContent='Cerrar sesión ('+session.user.email.split('@')[0]+')';btn.onclick=async()=>{await signOut();};link.style.display='inline';plink.style.display='inline';renderCollection();}
+  else{btn.textContent='Iniciar sesión';btn.onclick=openAuth;link.style.display='none';plink.style.display='none';document.getElementById('mycollection').style.display='none';}
+}
+
+/* ============ PERFIL ============ */
+async function openProfile(){
+  if(!SUPABASE_READY||!(await getSession())){openAuth();return;}
+  document.getElementById('profileMsg').textContent='Cargando…';
+  document.getElementById('profileBg').classList.add('on');
+  const{data,error}=await getMyProfile();
+  const msg=document.getElementById('profileMsg');
+  if(error){msg.style.color='var(--red)';msg.textContent=error.message;return;}
+  document.getElementById('profileUsername').value=(data&&data.username)||'';
+  document.getElementById('profileCountry').value=(data&&data.country)||'';
+  msg.textContent='';
+}
+function closeProfile(){document.getElementById('profileBg').classList.remove('on');}
+async function saveProfile(){
+  const username=document.getElementById('profileUsername').value.trim();
+  const country=document.getElementById('profileCountry').value;
+  const msg=document.getElementById('profileMsg');
+  msg.style.color='var(--muted)';msg.textContent='Guardando…';
+  const{error}=await updateMyProfile({username:username||undefined,country});
+  if(error){msg.style.color='var(--red)';msg.textContent=error.message;return;}
+  msg.style.color='var(--green)';msg.textContent='Perfil actualizado ✓';
+  setTimeout(closeProfile,900);
 }
 
 async function createAlertFor(c){
@@ -831,7 +882,8 @@ async function removeItem(id){await removeFromCollection(id);renderCollection();
 
 /* exponer al scope global (lo usan los onclick del HTML) */
 Object.assign(window,{setGame,setMode,quick,runSearch,toggleVoice,handlePhoto,join,openModal,closeModal,createEvent,
-  openAuth,closeAuth,toggleAuthMode,submitAuth,saveCurrentToCollection,removeItem,createAlertFor});
+  openAuth,closeAuth,toggleAuthMode,submitAuth,saveCurrentToCollection,removeItem,createAlertFor,
+  openProfile,closeProfile,saveProfile});
 
 /* init */
 renderChips();renderRail();renderEvents();

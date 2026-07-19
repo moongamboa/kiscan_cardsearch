@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   // Traduce el nombre de juego de la app al slug que espera apitcg.com
   const GAME_SLUGS = {
     onepiece: 'one-piece',
-    dbs: 'dragon-ball-fusion',
+    dbfw: 'dragon-ball-fusion',
   };
   const slug = GAME_SLUGS[game];
   if (!slug) {

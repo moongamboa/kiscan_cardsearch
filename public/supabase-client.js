@@ -32,6 +32,21 @@ export async function getSession() {
   return data.session;
 }
 
+/* ---------------- PERFIL ---------------- */
+export async function getMyProfile() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { data: null, error: null };
+  return supabase.from('profiles').select('*').eq('id', user.id).single();
+}
+export async function updateMyProfile({ country, username }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Debes iniciar sesión.');
+  const patch = {};
+  if (country !== undefined) patch.country = country;
+  if (username !== undefined) patch.username = username;
+  return supabase.from('profiles').update(patch).eq('id', user.id);
+}
+
 /* ---------------- COLECCIÓN ---------------- */
 export async function addToCollection({ game, card_name, card_code, price_paid, currency, image_url }) {
   const { data: { user } } = await supabase.auth.getUser();

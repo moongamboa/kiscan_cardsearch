@@ -70,6 +70,13 @@ gh repo create kiscan --public --source=. --push
      llamadas/día gratis)
 4. **Deploy**. Cada `git push` a partir de ahora despliega solo.
 
+## Perfil de usuario (país)
+
+Con sesión iniciada, aparece **"Mi perfil"** en el menú superior — permite
+guardar tu país (usa la tabla `profiles` que ya crea `schema.sql`, sin pasos
+adicionales). Pensado para más adelante recomendar eventos de tu zona
+automáticamente.
+
 ## 4. Ranking real de "más buscadas" (automático, sin pasos extra)
 
 En cuanto Supabase esté conectado (paso 2 de arriba), cada búsqueda con éxito
@@ -137,7 +144,8 @@ kiscan/
 |---|---|---|
 | Scryfall (Magic) | ✅ | API pública oficial, gratis |
 | Pokémon TCG API | ✅ | API pública oficial, gratis |
-| apitcg.com (One Piece / Dragon Ball **Fusion World**) | ✅ (con tu clave) | API con tier gratis. **Ojo**: cubre el Dragon Ball Super *Fusion World* actual (códigos `FB0X`), no el Dragon Ball Super Card Game descontinuado (códigos `BT0X`) que usan los datos de ejemplo |
+| apitcg.com (One Piece / Dragon Ball **Fusion World**) | ✅ (con tu clave) | API con tier gratis. Cubre el juego actual *Fusion World* (`FB0X`) |
+| — Dragon Ball **Master** (clásico, `BT0X`) | 🟡 Demo siempre | Bandai discontinuó este juego; no existe API gratuita que lo cubra. Se deja como pestaña aparte con datos de ejemplo, porque la comunidad lo sigue jugando |
 | eBay Browse API (marketplace España) | ✅ (con tus claves) | API oficial, gratis hasta ~5.000 llamadas/día |
 | **Vinted** | ❌ | No tiene API pública para leer anuncios de terceros (solo una API "Pro" para que negocios gestionen su propio inventario, en lista de espera). La única forma de sacar datos es scraping de endpoints internos, que va contra sus términos de servicio y se rompe sin avisar |
 | **Wallapop** | ❌ | No tiene ninguna API pública. Mismo problema que Vinted |
