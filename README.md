@@ -21,8 +21,8 @@ alertas de precio y encuentra torneos por país.
 
 ## Stack
 
-- **Frontend:** HTML/CSS/JS vanilla, sin build step (fácil de leer para aprender).
-- **Hosting:** [Vercel](https://vercel.com) (plan gratuito).
+- **Frontend:** HTML/CSS/JS vanilla, sin build step.
+- **Hosting:** [Vercel](https://vercel.com) (plan gratuito/hobbz).
 - **Base de datos + Auth:** [Supabase](https://supabase.com) (plan gratuito: 500 MB, 50k usuarios/mes).
 - **Backend ligero:** funciones serverless en `/api` (Vercel Functions) — ocultan las API keys y esquivan problemas de CORS.
 
@@ -54,7 +54,7 @@ gh repo create kiscan --public --source=. --push
    las constantes `SUPABASE_URL` y `SUPABASE_ANON_KEY`.
 
 > Estas dos claves son públicas a propósito (viven en el navegador). La
-> seguridad de verdad la da RLS en el paso 2 — por eso el esquema SQL es lo
+> seguridad de verdad la da RLS en el paso 2, por eso el esquema SQL es lo
 > más importante de todo el proyecto: revísalo antes de confiar en él.
 
 ## 3. Despliega en Vercel (gratis)
@@ -65,14 +65,14 @@ gh repo create kiscan --public --source=. --push
 3. En **Settings → Environment Variables**, añade (opcional, solo si quieres
    precios reales de One Piece/Dragon Ball):
    - `APITCG_KEY` — gratis en [apitcg.com](https://apitcg.com)
-   - `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` — gratis en
+   - `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` : gratis en
      [developer.ebay.com](https://developer.ebay.com) (crea una app, ~5.000
      llamadas/día gratis)
 4. **Deploy**. Cada `git push` a partir de ahora despliega solo.
 
 ## Perfil de usuario (país)
 
-Con sesión iniciada, aparece **"Mi perfil"** en el menú superior — permite
+Con sesión iniciada, aparece **"Mi perfil"** en el menú superior; permite
 guardar tu país (usa la tabla `profiles` que ya crea `schema.sql`, sin pasos
 adicionales). Pensado para más adelante recomendar eventos de tu zona
 automáticamente.
@@ -185,7 +185,7 @@ sola y usa el parámetro correcto en `apitcg.com`.
 - [ ] Reconocimiento de carta por foto: OCR del código impreso con
       Tesseract.js (gratis, corre en el navegador) en vez del sorteo actual.
 - [x] Conectar One Piece/Dragon Ball a datos reales vía `/api/card-search`
-      y `/api/ebay-search`. **Hecho** — se activa al añadir `APITCG_KEY`,
+      y `/api/ebay-search`. **Hecho** ; se activa al añadir `APITCG_KEY`,
       `EBAY_CLIENT_ID` y `EBAY_CLIENT_SECRET` en Vercel.
 
 ---
