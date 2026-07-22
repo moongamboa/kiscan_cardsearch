@@ -582,26 +582,40 @@ async function searchLiveTcg(game,term){
     const r=await fetch('/api/card-search?game='+game+'&'+qs);
     if(!r.ok)return null;
     const j=await r.json();
-    const c=(j.data||j.cards||[])[0];
-    if(!c)return null;
-    const img=(c.images&&(c.images.large||c.images.small))||c.image||'';
-    const code=c.code||c.id||'';
-    // 2) Precios reales desde eBay (a través del proxy)
+    const list=j.data||[];
+    if(!list.length)return null;
+    // Preferimos una coincidencia exacta de nombre; si no hay, la primera de la lista.
+    const tlow=term.trim().toLowerCase();
+    const c=list.find(x=>(x.name||'').toLowerCase()===tlow)||list[0];
+
+    const a=c.attributes||{};
+    const img=(c.images&&c.images[0]&&(c.images[0].large||c.images[0].medium||c.images[0].small))||'';
+    const code=c.code||(a.Number)||'';
+
+    // 2) Precio real: apitcg ya trae precio de mercado de TCGplayer directo (¡sin llamar a otra fuente!)
     let rows=[];
+    const tp=c.markets&&c.markets.tcgplayer;
+    if(tp&&tp.prices){
+      const p=tp.prices;
+      if(p.market)rows.push({src:"TCGplayer",flag:"🇺🇸",loc:"Precio de mercado",price:p.market,cur:"$",url:tp.url,color:"#f0501e",best:true});
+      if(p.low&&p.low!==p.market)rows.push({src:"TCGplayer · más barata",flag:"🇺🇸",loc:"Precio mínimo listado",price:p.low,cur:"$",url:tp.url,color:"#f0501e"});
+    }
+    // 3) Complementamos con eBay España si hay clave configurada (mejor esfuerzo, no bloquea si falla)
     try{
       const er=await fetch('/api/ebay-search?q='+encodeURIComponent((c.name+' '+code).trim()));
       if(er.ok){
-        const items=((await er.json()).items||[]).filter(it=>it.price!=null).sort((a,b)=>a.price-b.price).slice(0,5);
-        rows=items.map(it=>({src:"eBay",flag:"🌍",loc:(it.condition||'Ver estado')+(it.seller?' · '+it.seller:''),
-          price:it.price,cur:it.currency==='USD'?'$':(it.currency==='GBP'?'£':'€'),url:it.url,color:"#2f7d32"}));
+        const items=((await er.json()).items||[]).filter(it=>it.price!=null).sort((a,b)=>a.price-b.price).slice(0,3);
+        rows=rows.concat(items.map(it=>({src:"eBay",flag:"🌍",loc:(it.condition||'Ver estado')+(it.seller?' · '+it.seller:''),
+          price:it.price,cur:it.currency==='USD'?'$':(it.currency==='GBP'?'£':'€'),url:it.url,color:"#2f7d32"})));
       }
     }catch(e){}
-    if(!rows.length)rows.push({src:"Sin listados",flag:"—",loc:"No hay ofertas de eBay ahora mismo",price:0,cur:"€"});
-    return {live:true,name:c.name,code:code,set:(c.set&&c.set.name)||c.set||'',
-      rarity:c.rarity||'—',color:c.color||'—',cost:(c.cost!=null?c.cost:'—'),power:c.power||null,
-      cardType:(c.type||'')+(c.family?' · '+c.family:''),
-      ability:(c.ability||c.effect||'Sin texto de reglas.'),imageUrl:img,prices:rows,
-      note:"Datos de la carta: apitcg.com · Precios reales: eBay (marketplace ES)."};
+    if(!rows.length)rows.push({src:"Sin precio",flag:"—",loc:"Sin datos de mercado ahora",price:0,cur:"€"});
+
+    return {live:true,name:c.name,code:code,set:(c.set&&c.set.name)||'',
+      rarity:a.Rarity||'—',color:a.Color||'—',cost:a.Cost||'—',power:a.Power||null,
+      cardType:a.CardType||'',
+      ability:a.Description||'Sin texto de reglas.',imageUrl:img,prices:rows,
+      note:"Datos de la carta y precio: apitcg.com (TCGplayer)."+(rows.some(r=>r.src==='eBay')?' + eBay.':'')};
   }catch(e){return null;}
 }
 
